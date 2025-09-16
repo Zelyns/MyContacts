@@ -1,4 +1,5 @@
-const router = require("express").Router();
+const express = require("express");
+const router = express.Router();
 const { User } = require("../models/user");
 const bcrypt = require("bcrypt");
 const Joi = require("joi");
@@ -20,8 +21,9 @@ router.post("/", async (req, res) => {
 		if (!validPassword)
 			return res.status(401).send({ message: "Invalid Email or Password" });
 
-		const token = user.generateAuthToken();
-		res.status(200).send({ data: token, message: "logged in successfully" });
+		req.session.user = user;
+
+		res.json({ message: "Connecté", user: { _id: user._id, email: user.email } });
 	} catch (error) {
 		res.status(500).send({ message: "Internal Server Error" });
 	}
@@ -34,5 +36,13 @@ const validate = (data) => {
 	});
 	return schema.validate(data);
 };
-
+router.post('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      return res.status(500).json({ message: 'Erreur lors du logout' });
+    }
+    res.clearCookie('connect.sid');
+    res.json({ message: 'Déconnecté' });
+  });
+});
 module.exports = router;
